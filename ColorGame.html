@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Color Game Demo</title>
+        <script type="text/javascript" src="d3.js"></script> <!-- src for script referecne -->
+        <style type="text/css">
+            
+            #imgTooltip {
+                position: fixed;
+                right:0px;
+                left:calc(76vw);
+                top:0px;
+                bottom:0px;
+                background-color:rgba(120,0,0,1);
+                pointer-events: none;
+            }
+
+            #imgTooltip p{
+                margin:3;
+                line-height: calc(2vh);
+                font-size: calc(2vh);
+                font-family:'Times New Roman', Times, serif;
+            }
+
+            #imgFrame {                
+                max-width: calc(75vw);
+            }
+
+            #imgTooltipCon {
+                position: fixed;
+                right: calc(3vw);
+                left: calc(79vw);
+                top:calc(16vh);
+            }
+
+            #imgTooltipCon p{
+                font-family:Verdana, Geneva, Tahoma, sans-serif;
+                font-size: calc(1.5vh);
+                color: aliceblue;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id ="imgTooltip">
+            <p style ="color:rgba(255,255,255,1); font-size:36px; 
+            font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; text-align: center; ">
+            Time For Fun!</p>
+            <p style ="color:rgba(255,255,255,1);  
+            font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; text-align: center; ">
+            Choose your favourite color from the left, <br>and see which masterpiece shares your taste! </p>
+        </div>
+        <div id = "imgTooltipCon">
+        </div>
+        <script type="text/javascript">
+            
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            console.log(w,h);
+            var lrRatio = 0.75; 
+            var tbRatio = 0.5; // define left_2_right ratio, top_2_bottom ratio
+            var wSvg1 = w * lrRatio;
+            var hSvg1 = h * tbRatio;
+            var hSvg2 = h * 0.25 * tbRatio;
+            var wNumPix = 38;
+            var hNumPix = 570 / wNumPix;
+            var pixSize = wSvg1 / (wNumPix + 2);
+            hSvg1 = (hNumPix + 2) * pixSize;
+            hSvg2 = 2.5 * pixSize;
+            var wNumPic = 9;
+            var picSize = wSvg1 / wNumPic;
+            var stdTxtSize = Math.round(w/100); 
+            var inRecTxtSize = Math.round(pixSize /2);
+            var stdStrWidth = 0.01 * Math.round(100);
+            var hsvR = 0.85*hSvg1*0.5;
+            var chosenColor = ["(255,255,255)","(255,255,255)","(255,255,255)","(255,255,255)","(255,255,255)"];
+            var colCounter = 0;
+
+            
+            // import data 1: coloronly
+            var coloronly;
+            var colorgame;
+
+            d3.csv("coloronly5.csv")
+              .then(function(dataset){
+                coloronly = dataset;
+                
+                // initiate palette as a whole svg called svgAll, and all rect on the left as a class called leftDisplay
+                // initiate imgframe as whole div frame
+                var svgAll = d3.select("body")
+                               .append("svg")
+                               .attr("id", "rectFrame");
+
+                d3.select("body")
+                  .append("p")
+                  .style("font-size", stdTxtSize + "px")
+                  .style("font-family", "Verdana, Geneva, Tahoma, sans-serif") 
+                  .text("Custom color palette - up to five!");
+
+                var svgPalette = d3.select("body")
+                                   .append("svg");
+
+                var divAll = d3.select("body")
+                               .append("div")
+                               .attr("id","imgFrame");
+
+
+                svgAll.attr("width", wSvg1)           
+                      .attr("height", hSvg1);
+                svgPalette.attr("width", wSvg1)
+                          .attr("height", hSvg2);
+                divAll.attr("position", "fixed")    /////////????????????????????
+                      .attr("right", w - wSvg1+100)
+                      .attr("top", 50)
+                      .attr("max-width", wSvg1)
+                      .attr("height", 1200)
+                      .attr("background-color","powderblue")
+                      .attr("margin-left", 5);
+                
+
+                svgAll.selectAll("rect")
+                        .data(coloronly)
+                        .enter()
+                        .append("rect")
+                        .attr("class","leftDisplay")
+                        .attr("id",function(d){
+                            return "rgb" + d.rgb_value
+                        })  // set color id to each rect
+                        .attr("x",function(d,i){
+                            return pixSize*(i % wNumPix + 1);
+                        })
+                        .attr("y",function(d,i){
+                            return pixSize*(Math.floor(i/wNumPix)+1);
+                        }) 
+                        .attr("width",pixSize)
+                        .attr("height",pixSize)
+                        .attr("stroke","white")
+                        .attr("stroke-width", stdStrWidth + "px")
+                        .attr("fill",function(d){
+                            return "rgba(" + d.r_value +","+ d.g_value +","+ d.b_value + ",1)";
+                        });
+
+
+                // initiate chosen color palette
+                svgPalette.selectAll("rect")
+                          .data(chosenColor)
+                          .enter()
+                          .append("rect")
+                          .attr("class", "chosen")
+                          .attr("x", function(d,i){
+                            return i*(wSvg1-10*pixSize)/5 + 4*pixSize;
+                          })                          
+                        //   .attr("x",function(d,i){
+                        //       return 2 * pixSize * (i+2) + pixSize;
+                        //   })
+                          .attr("y", 0.5*pixSize)
+                          .attr("width", (wSvg1-10*pixSize)/5 )
+                        //  .attr("width", 2 * pixSize)
+                          .attr("height", pixSize)
+                          .attr("stroke", "white")
+                          .attr("stroke-width", stdStrWidth + "px")
+                          .attr("fill",function(d){
+                              return "rgb" + d; // forget RGB all the time....
+                          });
+
+
+                // create a refresh bottom as group of rect and text
+                svgPalette.append("g")
+                          .attr("id", "refreshBtm")
+                          .append("rect")
+                          .attr("x", pixSize) 
+                          .attr("y", 0)
+                          .attr("width", 2* pixSize)
+                          .attr("height", 2* pixSize)
+                          .attr("fill", "white")
+                          .attr("stroke", "black")
+                          .attr("stroke-width", 2 * stdStrWidth + "px");
+                svgPalette.select("#refreshBtm")
+                          .append("text")
+                          .attr("x", pixSize + pixSize)
+                          .attr("y", pixSize + inRecTxtSize * 0.4)
+                          .attr("text-anchor", "middle")
+                          .attr("font-size", inRecTxtSize + "px")
+                          .attr("fill", "black")
+                          .text("RESET")
+                          .style("pointer-events", "none");
+
+                // create a HSV bottom as group of rect and text
+                svgPalette.append("g")
+                          .attr("id", "hsvBtm")
+                          .append("rect")
+                          .attr("x", wSvg1 - pixSize - 4*pixSize) 
+                          .attr("y", 0)
+                          .attr("width", 4* pixSize)
+                          .attr("height", 1* pixSize)
+                          .attr("fill", "black")
+                          .attr("stroke", "white")
+                          .attr("stroke-width", 2 * stdStrWidth + "px");
+                svgPalette.select("#hsvBtm")
+                          .append("text")
+                          .attr("x", wSvg1 - pixSize - 2*pixSize)
+                          .attr("y", 0.5 * pixSize + inRecTxtSize * 0.4)
+                          .attr("text-anchor", "middle")
+                          .attr("font-size", inRecTxtSize + "px")
+                          .attr("fill", "white")
+                          .text("HSV View")
+                          .style("pointer-events", "none");
+                
+                // create a Mosaic bottom as group of rect and text
+                svgPalette.append("g")
+                          .attr("id", "mscBtm")
+                          .append("rect")
+                          .attr("x", wSvg1 - pixSize - 4*pixSize) 
+                          .attr("y", pixSize)
+                          .attr("width", 4* pixSize)
+                          .attr("height", 1* pixSize)
+                          .attr("fill", "black")
+                          .attr("stroke", "white")
+                          .attr("stroke-width", 2 * stdStrWidth + "px");
+                svgPalette.select("#mscBtm")
+                          .append("text")
+                          .attr("x", wSvg1 - pixSize - 2*pixSize)
+                          .attr("y", 1.5 * pixSize + inRecTxtSize * 0.4)
+                          .attr("text-anchor", "middle")
+                          .attr("font-size", inRecTxtSize + "px")
+                          .attr("fill", "white")
+                          .text("Mosaic View")
+                          .style("pointer-events", "none");
+
+
+                //plot hsv circle index 
+                d3.select("#rectFrame")
+                    .append("g")
+                    .attr("id", "axeIndex")
+                    .append("circle")
+                    .attr("cx", wSvg1/2)
+                    .attr("cy", hSvg1/2)
+                    .attr("r", hsvR*0.15)
+                    .attr("stroke", "rgb(150,150,150)")
+                    .attr("stroke-dasharray", "0.5%")
+                    .attr("stroke-width", 0.5*stdStrWidth + "px")
+                    .attr("fill", "none");
+                d3.select("#axeIndex")
+                    .append("line")
+                    .attr("x1", wSvg1/2 + hsvR * 0.15)
+                    .attr("y1", hSvg1/2)
+                    .attr("x2", wSvg1/2 + hsvR * 1.35)
+                    .attr("y2", hSvg1/2)
+                    .style("stroke", "rgb(150,150,150)")
+                    .attr("stroke-dasharray", "0.5%")
+                    .style("stroke-width", 0.5*stdStrWidth + "px");
+                d3.select("#axeIndex")
+                    .append("text")
+                    .attr("x", wSvg1/2 + hsvR * 1.35)
+                    .attr("y", hSvg1/2 + 0.4*inRecTxtSize)
+                    .attr("text-anchor", "left")
+                    .attr("font-size", inRecTxtSize + "px")
+                    .attr("fill", "rgb(150,150,150)")
+                    .text("Saturation")
+                    .style("pointer-events", "none");
+                d3.select("#axeIndex")
+                  .style("opacity", "0");
+
+                
+                // import data 2: colorgame, INSIDE data1 csv
+                d3.csv("colorgame2.csv")
+                  .then(function(dataset1){
+                      colorgame = dataset1;
+
+
+                      // initiate all img without selection
+                      var rightAll = d3.select("#imgFrame")
+                                        .selectAll("img")                                                   
+                                        .data(colorgame)
+                                        .enter()
+                                        .append("img");
+
+                      // define a tooltip event on Color Palette
+                      svgAll.selectAll("rect")
+                            .on("mouseover", function(d){
+                                var xPosition = parseFloat(d3.select(this).attr("x"));
+                                var yPosition = parseFloat(d3.select(this).attr("y"));
+                                var currentRGB = d3.select(this).attr("id").slice(3);
+
+                                svgAll.append("rect")
+                                      .attr("id","tooltip1")
+                                      .attr("x", xPosition - pixSize)
+                                      .attr("y", yPosition - pixSize)
+                                      .attr("width", 3*pixSize)
+                                      .attr("height", 3*pixSize) 
+                                      .attr("fill", "rgb" + currentRGB)
+                                      .attr("stroke", "white")
+                                      .attr("stroke-width", stdStrWidth*3 + "px")
+                                      .style("pointer-events", "none");
+                                svgAll.append("text")
+                                      .attr("id","tooltip2")
+                                      .attr("x", xPosition + 0.5 * pixSize)
+                                      .attr("y", yPosition)
+                                      .attr("text-anchor", "middle")
+                                      .attr("font-size", inRecTxtSize*0.75)
+                                      .attr("fill", "white")
+                                      .text(d.rgb_value)
+                                      .style("pointer-events", "none");
+                                svgAll.append("text")
+                                        .attr("id","tooltip3")
+                                        .attr("x", xPosition + 0.5 * pixSize)
+                                        .attr("y", yPosition + 0.75 * pixSize)
+                                        .attr("text-anchor", "middle")
+                                        .attr("font-size", inRecTxtSize*1.2)
+                                        .attr("fill", "white")
+                                        .text(d.occurence)
+                                        .style("pointer-events", "none");
+                                svgAll.append("text")
+                                        .attr("id","tooltip4")
+                                        .attr("x", xPosition + 0.5 * pixSize)
+                                        .attr("y", yPosition + 1.25 * pixSize)
+                                        .attr("text-anchor", "middle")
+                                        .attr("font-size", inRecTxtSize*0.75)
+                                        .attr("fill", "white")
+                                        .text("shots")
+                                        .style("pointer-events", "none");
+
+                            })
+                            .on("mouseout", function(){
+                                d3.select("#tooltip1").remove();
+                                d3.select("#tooltip2").remove();
+                                d3.select("#tooltip3").remove();
+                                d3.select("#tooltip4").remove();
+                                  
+                            });
+                                        
+                      
+                      // start on-click color event
+                      svgAll.selectAll(".leftDisplay")
+                            .on("click",function(){
+                                
+                                // get the current element's rgb: rgb(x,x,x)
+                                var thisRGB = d3.select(this).attr("id").slice(3);
+                                
+                                // color counter + 1 
+                                colCounter = colCounter + 1;
+                                
+
+                                // modify chosen Color Palette 
+                                chosenColor.unshift(thisRGB);
+                                chosenColor.pop();
+                                console.log(chosenColor);
+                                console.log(colCounter)
+
+                                svgPalette.selectAll("rect")
+                                          .data(chosenColor)
+                                          .transition()
+                                          .duration(500)
+                                          .attr("fill",function(d){
+                                                return "rgb" + d;
+                                            });
+                                
+         
+                                // re-initiate all img to un-display
+                                d3.selectAll("img").style("display","none");
+
+                                                
+                                // filter the img to be displayed 
+                                var currentDisplay = d3.selectAll("img")
+                                                       .filter(function(d){
+                                                                var isDisplay = true; //weird... but have to be refreshed inside, or the last d would return "false" and make the whole sentence false;
+                                                                if (colCounter <= 5){
+                                                                    for (var i = 0; i < colCounter ; i++){
+                                                                        isDisplay = isDisplay && ((d.Cluster1 === chosenColor[i]) || (d.Cluster2 === chosenColor[i])
+                                                                        || (d.Cluster3 === chosenColor[i]) || (d.Cluster4 === chosenColor[i]) ||
+                                                                        (d.Cluster5 === chosenColor[i]));                                                                        
+                                                                    }                                                 
+                                                                }else{
+                                                                    for (var i = 0; i < 5 ; i++){
+                                                                        isDisplay = isDisplay && (d.Cluster1 == chosenColor[i] || d.Cluster2 == chosenColor[i]
+                                                                        || d.Cluster3 == chosenColor[i] || d.Cluster4 == chosenColor[i] ||
+                                                                        d.Cluster5 == chosenColor[i] );                                                                       
+                                                                    }                                            
+                                                                };
+                                                                return isDisplay;                                                                                                          
+                                                       })                                                           
+                                                        .style("display","inline") // IMPT! 
+                                                        .attr("src", function(d){
+                                                            return d.PrimaryImageSmall;
+                                                        })
+                                                        .attr("width", picSize)
+                                                        .attr("height", picSize) 
+                                                        .attr("align", "middle");
+                                
+
+                                // initiate & re-initiate current possible color
+                                var currentPossibleColor = [];
+
+                                // extract current possible color palette (+rgb as id) into array of data
+                                currentDisplay.each(function(d,i){
+                                    var otherRGB1 =   d.Cluster1;
+                                    currentPossibleColor.push(otherRGB1);
+                                    var otherRGB2 =   d.Cluster2;
+                                    currentPossibleColor.push(otherRGB2);
+                                    var otherRGB3 =   d.Cluster3;
+                                    currentPossibleColor.push(otherRGB3);
+                                    var otherRGB4 =   d.Cluster4;
+                                    currentPossibleColor.push(otherRGB4);
+                                    var otherRGB5 =   d.Cluster5;
+                                    currentPossibleColor.push(otherRGB5);
+                                });
+
+                                //console.log(currentPossibleColor);
+                                //de-color & re-color for colorPalette
+                                svgAll.selectAll("rect")
+                                      .style("opacity", 0.25);
+
+                                svgAll.selectAll("rect")
+                                      .filter(function(d){
+                                          var nowRGB = d3.select(this).attr("id").slice(3);
+                                          return currentPossibleColor.some(x => x === nowRGB);
+                                      })
+                                      .attr("stroke-width", 2.5*stdStrWidth + "px")
+                                      .style("opacity", 1);                                                          
+                                                                                  
+                                                  
+                            });
+
+                      
+                      // tooltip mouse-on event of the img items 
+                      d3.selectAll("img")
+                        .on("mouseover", function(d){
+                            
+                            var currentSrc = d3.select(this).attr("src");
+                            //console.log(currentSrc);
+                            
+                            d3.select("#imgTooltipCon")
+                              .append("g")
+                              .attr("id","contentNow");
+                            d3.select("#contentNow")
+                              .append("p")
+                              .text("[Title]: " + d.Title)
+                              .append("p")
+                              .text("[Artist]: " + d.artistDisplayName + "(" + d.artistBeginDate + " - " + d.artistEndDate + ")")
+                              .append("p")
+                              .text("[Culture]: " + d.Culture)
+                              .append("p")
+                              .text("[Tags]: " + d.Tags);
+                              
+                            d3.select("#contentNow")
+                              .append("img")
+                              .attr("src", currentSrc)
+                              .attr("right", 0.125*(1-lrRatio)*w)
+                              .attr("width", 0.75*(1-lrRatio)*w);
+
+                        });
+
+                      d3.selectAll("img")
+                        .on("mouseout",function(d){
+                            d3.select("#contentNow")
+                              .remove();
+                        });
+
+
+                      
+
+                      // on-click event of the refresh bottom
+                      svgPalette.select("#refreshBtm").select("rect")
+                                .on("click", function(){
+
+                                    colCounter = 0;
+                                    chosenColor = ["(255,255,255)","(255,255,255)","(255,255,255)","(255,255,255)","(255,255,255)"];
+                                    // refresh palette color into white 
+                                    svgPalette.selectAll("rect")
+                                              .data(chosenColor)
+                                              .transition()
+                                              .duration(250)
+                                              .attr("fill", function(d){
+                                                  return "rgb" + d;
+                                              });
+                                    // refresh div Frame to empty
+                                    d3.selectAll("img").style("display","none");
+
+                                    // refresh opacity from 0.5 to 1
+                                    svgAll.selectAll("rect")
+                                          .style("opacity", 1);
+
+                                });
+
+
+                      // on-click event of the HSV Bottom
+                      svgPalette.select("#hsvBtm").select("rect")
+                                .on("click", function(){
+
+                                d3.select("#axeIndex")
+                                  .style("opacity", "1");
+
+                                var sPixSize = 0.6*pixSize;
+                                svgAll.selectAll("rect")
+                                      .transition()
+                                      .duration(1000)
+                                      .attr("x",function(d){
+                                          return wSvg1*0.5 + (+d.s_value+0.6)*hsvR*0.6*Math.cos((+d.h_value+30)*Math.PI/180) - 0.5*sPixSize;
+                                      })
+                                      .attr("y",function(d){
+                                          return hSvg1*0.5 + (+d.s_value+0.6)*hsvR*0.6*Math.sin((+d.h_value+30)*Math.PI/180) - 0.5*sPixSize;
+                                      })
+                                      .attr("fill", function(d){
+                                            return "rgba(" + d.r_value +","+ d.g_value +","+ d.b_value + ",0.02)";
+                                        })
+                                      .attr("stroke",function(d){
+                                            return "rgba(" + d.r_value +","+ d.g_value +","+ d.b_value + ",0.9)";
+                                        })
+                                      .attr("stroke-width", stdStrWidth + "px")
+                                      .attr("rx",0.25*sPixSize)
+                                      .attr("ry",0.25*sPixSize)                                      
+                                      .attr("width", sPixSize)
+                                      .attr("height", sPixSize);
+
+                            });
+
+                      // on-click event of the Mosaic Bottom
+                      svgPalette.select("#mscBtm").select("rect")
+                                .on("click", function(){
+                                    
+                                    d3.select("#axeIndex")
+                                    .style("opacity", "0");
+
+                                    svgAll.selectAll("rect")
+                                          .sort(function(){
+                                              return 0.5 - Math.random(); // this is magic ;)
+                                          })
+                                            .transition()
+                                            .duration(1000)
+                                            .attr("x",function(d,i){
+                                                return pixSize*(i % wNumPix + 1);
+                                            })
+                                            .attr("y",function(d,i){
+                                                return pixSize*(Math.floor(i/wNumPix)+1);
+                                            }) 
+                                            .attr("rx",0)
+                                            .attr("ry",0) 
+                                            .attr("width",pixSize)
+                                            .attr("height",pixSize)
+                                            .attr("stroke","white")
+                                            .attr("stroke-width", stdStrWidth + "px")
+                                            .attr("fill",function(d){
+                                                return "rgba(" + d.r_value +","+ d.g_value +","+ d.b_value + ",1)";
+                                            });
+
+                                });
+                  });
+            });
+
+
+        </script>
+    </body>
+</html>
